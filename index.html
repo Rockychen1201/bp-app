@@ -10,7 +10,6 @@
   <style>
     :root {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color-scheme: light dark;
     }
     body {
       margin: 0;
@@ -39,525 +38,224 @@
       padding: 16px;
       margin-bottom: 16px;
     }
-    .form-grid {
-      display: grid;
-      gap: 8px 16px;
-    }
-    @media (min-width: 700px) {
-      .form-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-      }
-      .form-grid .full {
-        grid-column: 1 / -1;
-      }
-    }
-    label {
-      display: block;
-      font-size: 0.85rem;
-      margin-bottom: 2px;
-    }
     input, select, textarea, button {
       width: 100%;
-      box-sizing: border-box;
       padding: 6px 8px;
       border-radius: 8px;
       border: 1px solid #ccc;
       font-size: 0.9rem;
-      font-family: inherit;
-    }
-    textarea {
-      resize: vertical;
-      min-height: 48px;
     }
     button {
-      cursor: pointer;
-      border: none;
       background: #007aff;
       color: white;
-      font-weight: 600;
+      font-weight: bold;
+      border: none;
       padding: 8px 12px;
     }
-    button.secondary {
-      background: #eee;
-      color: #333;
-    }
-    button:disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px;
-    }
-    .stats-line {
-      font-size: 0.9rem;
-      margin-bottom: 4px;
-    }
-    .table-container {
-      overflow-x: auto;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-    }
-    th, td {
-      padding: 4px 6px;
-      border-bottom: 1px solid #ddd;
-      text-align: left;
-      white-space: nowrap;
-    }
-    th {
-      background: #fafafa;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-    .tag {
-      display: inline-block;
-      padding: 1px 6px;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      background: #eee;
-      margin-right: 4px;
-    }
-    .tag.sysdia {
-      background: #e0f0ff;
-    }
-    .tag.hr {
-      background: #ffe0e0;
-    }
-    .small {
-      font-size: 0.8rem;
-      color: #666;
-    }
-    canvas {
-      max-height: 260px;
-    }
+    button.secondary { background: #eee; color: #333; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .small { font-size: 0.8rem; color: #666; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { padding: 4px 6px; border-bottom: 1px solid #ddd; white-space: nowrap; }
+    .tag { padding: 1px 6px; border-radius: 999px; background: #eee; font-size: 0.75rem; }
+    .tag.sysdia { background: #e0f0ff; }
+    .tag.hr { background: #ffe0e0; }
+    canvas { max-height: 260px; }
   </style>
 </head>
+
 <body>
   <div class="app">
     <h1>血壓紀錄（Google Sheet 雲端同步版）</h1>
-    <div class="subtitle">
-      電腦輸入、手機查看，用同一個網址就可以共用資料。
-    </div>
+    <div class="subtitle">電腦輸入、手機查看，用同一個網址即可同步。</div>
 
     <!-- 表單 -->
     <div class="card">
-      <h2 style="margin-top:0;">新增紀錄 Add Record</h2>
+      <h2>新增紀錄 Add Record</h2>
       <div class="form-grid">
-        <div>
-          <label>日期 Date</label>
-          <input type="date" id="dateInput" />
-        </div>
-        <div>
-          <label>時間 Time</label>
-          <input type="time" id="timeInput" />
-        </div>
-        <div>
-          <label>收縮壓 Systolic (mmHg)</label>
-          <input type="number" id="sysInput" inputmode="numeric" placeholder="例如 120" />
-        </div>
-        <div>
-          <label>舒張壓 Diastolic (mmHg)</label>
-          <input type="number" id="diaInput" inputmode="numeric" placeholder="例如 80" />
-        </div>
-
-        <div>
-          <label>心跳 Heart Rate (bpm，可留白)</label>
-          <input type="number" id="hrInput" inputmode="numeric" placeholder="例如 70" />
-        </div>
-        <div>
-          <label>姿勢 Posture</label>
+        <label>日期 <input type="date" id="dateInput"></label>
+        <label>時間 <input type="time" id="timeInput"></label>
+        <label>收縮壓 <input type="number" id="sysInput"></label>
+        <label>舒張壓 <input type="number" id="diaInput"></label>
+        <label>心跳 <input type="number" id="hrInput"></label>
+        <label>姿勢
           <select id="postureInput">
-            <option value="">未填寫 / Not set</option>
-            <option value="坐姿">坐姿 Sitting</option>
-            <option value="站姿">站姿 Standing</option>
-            <option value="躺姿">躺姿 Lying</option>
+            <option value="">未填寫</option>
+            <option>坐姿</option><option>站姿</option><option>躺姿</option>
           </select>
-        </div>
-        <div>
-          <label>測量手臂 Arm</label>
+        </label>
+        <label>手臂
           <select id="armInput">
-            <option value="">未填寫 / Not set</option>
-            <option value="左手">左手 Left</option>
-            <option value="右手">右手 Right</option>
+            <option value="">未填寫</option>
+            <option>左手</option><option>右手</option>
           </select>
-        </div>
-
-        <div class="full">
-          <label>備註 Note</label>
-          <textarea id="noteInput" placeholder="例如：起床後 10 分鐘、吃藥前、運動後…"></textarea>
-        </div>
+        </label>
+        <label>備註 <textarea id="noteInput"></textarea></label>
       </div>
-
       <div class="actions">
         <button id="saveBtn">儲存 Save</button>
-        <button type="button" class="secondary" id="nowBtn">填入現在時間 Use now</button>
-        <button type="button" class="secondary" id="clearFormBtn">清除欄位 Clear form</button>
+        <button class="secondary" id="nowBtn">現在時間</button>
+        <button class="secondary" id="clearFormBtn">清空</button>
       </div>
       <div id="message" class="small"></div>
     </div>
 
-    <!-- 統計 + 圖表 -->
+    <!-- 統計 -->
     <div class="card">
-      <h2 style="margin-top:0;">統計與趨勢 Stats & Trend</h2>
-      <div id="stats" class="stats-line">讀取中 Loading…</div>
-      <div class="small" style="margin-bottom:8px;">
-        最近 7 天平均血壓，以及最近 30 天折線圖（電腦或手機任何一處輸入都同步）。
-      </div>
+      <h2>統計與趨勢</h2>
+      <div id="stats" class="small">讀取中…</div>
       <canvas id="bpChart"></canvas>
     </div>
 
-    <!-- 歷史紀錄 -->
+    <!-- 表格 -->
     <div class="card">
-      <h2 style="margin-top:0;">歷史紀錄 History</h2>
-      <div class="table-container">
-        <table id="recordsTable">
-          <thead>
-            <tr>
-              <th>日期 Date</th>
-              <th>時間 Time</th>
-              <th>血壓 BP</th>
-              <th>心跳 HR</th>
-              <th>姿勢 / 手臂</th>
-              <th>備註 Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- rows by JS -->
-          </tbody>
-        </table>
-      </div>
-      <div class="small" id="recordCount"></div>
+      <h2>歷史紀錄</h2>
+      <table>
+        <thead><tr>
+          <th>日期</th><th>時間</th><th>血壓</th><th>心跳</th><th>姿勢/手臂</th><th>備註</th>
+        </tr></thead>
+        <tbody id="recordsBody"></tbody>
+      </table>
+      <div id="recordCount" class="small"></div>
     </div>
   </div>
 
-    <script>
-    // 你的 Apps Script Web App URL
-    const API_BASE = 'https://script.google.com/macros/s/AKfycbwUHRMpJ__chSnbUbdEzZEnb6Ls2Vyeb2m8MXnWrylfIIUMxnqpLkgVVPz-9kbysJ2EsA/exec';
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const dateInput = document.getElementById("dateInput");
+  const timeInput = document.getElementById("timeInput");
+  const sysInput  = document.getElementById("sysInput");
+  const diaInput  = document.getElementById("diaInput");
+  const hrInput   = document.getElementById("hrInput");
+  const postureInput = document.getElementById("postureInput");
+  const armInput  = document.getElementById("armInput");
+  const noteInput = document.getElementById("noteInput");
+  const msg = document.getElementById("message");
+  const statsEl = document.getElementById("stats");
+  const recordsBody = document.getElementById("recordsBody");
+  const recordCount = document.getElementById("recordCount");
 
-    // 等整個 DOM 載完再開始抓元素、綁事件
-    window.addEventListener('DOMContentLoaded', () => {
-      const dateInput = document.getElementById("dateInput");
-      const timeInput = document.getElementById("timeInput");
-      const sysInput  = document.getElementById("sysInput");
-      const diaInput  = document.getElementById("diaInput");
-      const hrInput   = document.getElementById("hrInput");
-      const postureInput = document.getElementById("postureInput");
-      const armInput  = document.getElementById("armInput");
-      const noteInput = document.getElementById("noteInput");
+  let chart = null;
+  let records = [];
 
-      const saveBtn = document.getElementById("saveBtn");
-      const nowBtn = document.getElementById("nowBtn");
-      const clearFormBtn = document.getElementById("clearFormBtn");
+  function setNow() {
+    const t = new Date();
+    dateInput.value = t.toISOString().slice(0,10);
+    timeInput.value = t.toTimeString().slice(0,5);
+  }
+  setNow();
 
-      const messageEl = document.getElementById("message");
-      const statsEl = document.getElementById("stats");
-      const recordCountEl = document.getElementById("recordCount");
-      const recordsTableBody = document.querySelector("#recordsTable tbody");
+  // 取得資料（Apps Script API）
+  function loadRecords() {
+    statsEl.textContent = "讀取中…";
+    google.script.run
+      .withSuccessHandler(arr => {
+        records = arr;
+        renderEverything();
+      })
+      .getRecords();
+  }
 
-      let records = [];
-      let chart = null;
+  // 表格、統計、圖
+  function renderEverything() {
+    renderTable();
+    renderStats();
+    renderChart();
+  }
 
-      function setNow(force = false) {
-        const now = new Date();
-        const yyyy = now.getFullYear();
-        const mm = String(now.getMonth() + 1).padStart(2, "0");
-        const dd = String(now.getDate()).padStart(2, "0");
-        const hh = String(now.getHours()).padStart(2, "0");
-        const mi = String(now.getMinutes()).padStart(2, "0");
-        if (force || !dateInput.value) dateInput.value = `${yyyy}-${mm}-${dd}`;
-        if (force || !timeInput.value) timeInput.value = `${hh}:${mi}`;
-      }
-
-      function clearForm() {
-        sysInput.value = "";
-        diaInput.value = "";
-        hrInput.value = "";
-        postureInput.value = "";
-        armInput.value = "";
-        noteInput.value = "";
-        messageEl.textContent = "";
-      }
-
-      function showMessage(msg, isError = false) {
-        messageEl.textContent = msg;
-        messageEl.style.color = isError ? "#ff3b30" : "#333";
-      }
-
-
-      async function fetchRecords() {
-        statsEl.textContent = "讀取中 Loading…";
-        try {
-          const res = await fetch(API_BASE);
-          const json = await res.json();
-          records = (json.records || []).map(r => ({
-            ...r,
-            dt: r.dt || (r.date && r.time
-              ? new Date(r.date + 'T' + r.time + ':00').toISOString()
-              : new Date().toISOString()
-            )
-          }));
-          records.sort((a, b) => new Date(b.dt) - new Date(a.dt));
-          renderAll();
-        } catch (err) {
-          console.error('fetchRecords error:', err);
-          statsEl.textContent = "讀取失敗：" + err;
-        }
-      }
-
-
- 
-
-      async function addRecord() {
-        const date = dateInput.value;
-        const time = timeInput.value;
-        if (!date || !time) {
-          showMessage("請先填寫日期與時間。", true);
-          return;
-        }
-        const sysVal = Number(sysInput.value);
-        const diaVal = Number(diaInput.value);
-        if (!sysVal || !diaVal) {
-          showMessage("請輸入收縮壓與舒張壓（數字）。", true);
-          return;
-        }
-
-        const body = {
-          date,
-          time,
-          systolic: sysVal,
-          diastolic: diaVal,
-          heartRate: hrInput.value ? Number(hrInput.value) : '',
-          posture: postureInput.value || '',
-          arm: armInput.value || '',
-          note: noteInput.value || ''
-        };
-
-        const formData = new URLSearchParams();
-        Object.entries(body).forEach(([k, v]) => {
-          formData.append(k, v == null ? '' : String(v));
-        });
-
-        saveBtn.disabled = true;
-        showMessage("儲存中…", false);
-        try {
-          const res = await fetch(API_BASE, {
-            method: "POST",
-            body: formData
-          });
-
-          const json = await res.json();
-          if (!json.success) {
-            throw new Error(json.error || "unknown error");
-          }
-
-          clearForm();
-          await fetchRecords();
-
-          let tip = "";
-          if (sysVal < 90 || diaVal < 60) {
-            tip = "偏低，若有不適建議諮詢醫師。";
-          } else if (sysVal < 120 && diaVal < 80) {
-            tip = "正常範圍。";
-          } else if (sysVal < 140 && diaVal < 90) {
-            tip = "偏高，需留意生活作息。";
-          } else {
-            tip = "可能過高，建議與醫師討論。";
-          }
-          showMessage(`已儲存：${sysVal}/${diaVal} mmHg（${tip}）`);
-        } catch (err) {
-          console.error(err);
-          showMessage("儲存失敗，請檢查設定或稍後再試。", true);
-        } finally {
-          saveBtn.disabled = false;
-        }
-      }
-
-      function computeStats() {
-        if (!records.length) {
-          statsEl.textContent = "尚無資料 No data yet.";
-          return;
-        }
-        const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const sevenDaysAgo = new Date(todayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
-
-        const recent = records.filter(r => {
-          const d = new Date(r.dt);
-          const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-          return day >= sevenDaysAgo && day <= todayStart;
-        });
-
-        if (!recent.length) {
-          statsEl.textContent = "最近 7 天沒有紀錄 No records in last 7 days.";
-          return;
-        }
-
-        const avgSys = recent.reduce((sum, r) => sum + (r.systolic || 0), 0) / recent.length;
-        const avgDia = recent.reduce((sum, r) => sum + (r.diastolic || 0), 0) / recent.length;
-
-        statsEl.textContent =
-          `最近 7 天平均血壓：約 ${avgSys.toFixed(1)} / ${avgDia.toFixed(1)} mmHg  ` +
-          `（樣本數 ${recent.length} 筆）`;
-      }
-
-      function renderTable() {
-        recordsTableBody.innerHTML = "";
-        if (!records.length) {
-          const tr = document.createElement("tr");
-          const td = document.createElement("td");
-          td.colSpan = 6;
-          td.textContent = "目前沒有紀錄 No records yet.";
-          tr.appendChild(td);
-          recordsTableBody.appendChild(tr);
-          recordCountEl.textContent = "";
-          return;
-        }
-
-        records.forEach(r => {
-          const d = r.dt ? new Date(r.dt) : new Date();
-          const yyyy = d.getFullYear();
-          const mm = String(d.getMonth() + 1).padStart(2, "0");
-          const dd = String(d.getDate()).padStart(2, "0");
-          const hh = String(d.getHours()).padStart(2, "0");
-          const mi = String(d.getMinutes()).padStart(2, "0");
-
-          const tr = document.createElement("tr");
-
-          const dateTd = document.createElement("td");
-          dateTd.textContent = `${yyyy}/${mm}/${dd}`;
-          tr.appendChild(dateTd);
-
-          const timeTd = document.createElement("td");
-          timeTd.textContent = `${hh}:${mi}`;
-          tr.appendChild(timeTd);
-
-          const bpTd = document.createElement("td");
-          bpTd.innerHTML =
-            `<span class="tag sysdia">${r.systolic || "-"} / ${r.diastolic || "-"} mmHg</span>`;
-          tr.appendChild(bpTd);
-
-          const hrTd = document.createElement("td");
-          if (r.heartRate != null && !Number.isNaN(r.heartRate)) {
-            hrTd.innerHTML = `<span class="tag hr">${r.heartRate} bpm</span>`;
-          } else {
-            hrTd.textContent = "-";
-          }
-          tr.appendChild(hrTd);
-
-          const condTd = document.createElement("td");
-          const parts = [];
-          if (r.posture) parts.push(r.posture);
-          if (r.arm) parts.push(r.arm);
-          condTd.textContent = parts.length ? parts.join(" / ") : "-";
-          tr.appendChild(condTd);
-
-          const noteTd = document.createElement("td");
-          noteTd.textContent = r.note || "";
-          tr.appendChild(noteTd);
-
-          recordsTableBody.appendChild(tr);
-        });
-
-        recordCountEl.textContent = `共 ${records.length} 筆紀錄。`;
-      }
-
-      function renderChart() {
-        const ctx = document.getElementById("bpChart").getContext("2d");
-        if (chart) {
-          chart.destroy();
-        }
-        if (!records.length) {
-          chart = null;
-          return;
-        }
-
-        const now = new Date();
-        const thirtyDaysAgo = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
-
-        const recent = records
-          .filter(r => new Date(r.dt) >= thirtyDaysAgo)
-          .sort((a, b) => new Date(a.dt) - new Date(b.dt));
-
-        if (!recent.length) {
-          chart = null;
-          return;
-        }
-
-        const labels = recent.map(r => {
-          const d = new Date(r.dt);
-          const mm = String(d.getMonth() + 1).padStart(2, "0");
-          const dd = String(d.getDate()).padStart(2, "0");
-          const hh = String(d.getHours()).padStart(2, "0");
-          const mi = String(d.getMinutes()).padStart(2, "0");
-          return `${mm}/${dd} ${hh}:${mi}`;
-        });
-
-        const sysData = recent.map(r => r.systolic || null);
-        const diaData = recent.map(r => r.diastolic || null);
-
-        chart = new Chart(ctx, {
-          type: "line",
-          data: {
-            labels,
-            datasets: [
-              {
-                label: "Systolic 收縮壓",
-                data: sysData,
-                fill: false,
-                tension: 0.2
-              },
-              {
-                label: "Diastolic 舒張壓",
-                data: diaData,
-                fill: false,
-                tension: 0.2
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: {
-                title: {
-                  display: true,
-                  text: "mmHg"
-                }
-              }
-            },
-            plugins: {
-              legend: { display: true }
-            }
-          }
-        });
-      }
-
-      function renderAll() {
-        computeStats();
-        renderTable();
-        renderChart();
-      }
-
-      // 綁事件
-      saveBtn.addEventListener("click", addRecord);
-      nowBtn.addEventListener("click", () => setNow(true));
-      clearFormBtn.addEventListener("click", clearForm);
-
-      // 初始化
-      setNow(true);
-      fetchRecords();
+  function renderTable() {
+    recordsBody.innerHTML = "";
+    records.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.date}</td>
+        <td>${r.time}</td>
+        <td><span class="tag sysdia">${r.systolic}/${r.diastolic}</span></td>
+        <td><span class="tag hr">${r.heartRate || '-'}</span></td>
+        <td>${(r.posture||'') + ' ' + (r.arm||'')}</td>
+        <td>${r.note||''}</td>`;
+      recordsBody.appendChild(tr);
     });
-  </script>
+    recordCount.textContent = `共 ${records.length} 筆`;
+  }
 
+  function renderStats() {
+    if (!records.length) {
+      statsEl.textContent = "尚無資料";
+      return;
+    }
+    const now = new Date();
+    const seven = now.getTime() - 6*86400*1000;
+    const recent = records.filter(r => {
+      return new Date(r.date).getTime() >= seven;
+    });
+    if (!recent.length) {
+      statsEl.textContent = "最近 7 天無紀錄";
+      return;
+    }
+    const avgSys = recent.reduce((s,r)=>s+r.systolic,0)/recent.length;
+    const avgDia = recent.reduce((s,r)=>s+r.diastolic,0)/recent.length;
+    statsEl.textContent = `最近 7 天平均：約 ${avgSys.toFixed(1)} / ${avgDia.toFixed(1)} mmHg`;
+  }
 
-    function renderCh
+  function renderChart() {
+    if (chart) chart.destroy();
+    if (!records.length) return;
 
+    const labels = records.map(r => `${r.date} ${r.time}`);
+    const sys = records.map(r => r.systolic);
+    const dia = records.map(r => r.diastolic);
 
+    chart = new Chart(document.getElementById("bpChart"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          { label:"收縮壓", data:sys, borderColor:"red" },
+          { label:"舒張壓", data:dia, borderColor:"blue" }
+        ]
+      },
+      options:{ responsive:true }
+    });
+  }
 
+  // 儲存
+  document.getElementById("saveBtn").onclick = () => {
+    const data = {
+      date: dateInput.value,
+      time: timeInput.value,
+      systolic: Number(sysInput.value),
+      diastolic: Number(diaInput.value),
+      heartRate: hrInput.value ? Number(hrInput.value):"",
+      posture: postureInput.value,
+      arm: armInput.value,
+      note: noteInput.value
+    };
+    msg.textContent = "儲存中…";
 
+    google.script.run
+      .withSuccessHandler(res => {
+        msg.textContent = "已儲存！";
+        loadRecords();
+      })
+      .addRecord(data);
+  };
+
+  document.getElementById("nowBtn").onclick = setNow;
+  document.getElementById("clearFormBtn").onclick = () => {
+    sysInput.value = "";
+    diaInput.value = "";
+    hrInput.value = "";
+    postureInput.value = "";
+    armInput.value = "";
+    noteInput.value = "";
+    msg.textContent = "";
+  };
+
+  // 初始化
+  loadRecords();
+});
+</script>
+
+</body>
+</html>
