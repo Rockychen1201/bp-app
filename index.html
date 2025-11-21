@@ -1,6 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>血壓紀錄 Blood Pressure Logger (Cloud)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color-scheme: light dark;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f5f5f7;
+      color: #111;
+    }
+    .app {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size: 0.9rem;
+      color: #555;
+      margin-bottom: 16px;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .form-grid {
+      display: grid;
+      gap: 8px 16px;
+    }
+    @media (min-width: 700px) {
+      .form-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      .form-grid .full {
+        grid-column: 1 / -1;
+      }
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      margin-bottom: 2px;
+    }
+    input, select, textarea, button {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 48px;
+    }
+    button {
+      cursor: pointer;
+      border: none;
+      background: #007aff;
+      color: white;
+      font-weight: 600;
+      padding: 8px 12px;
+    }
+    button.secondary {
+      background: #eee;
+      color: #333;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .stats-line {
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+    }
+    .table-container {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    th, td {
+      padding: 4px 6px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+      white-space: nowrap;
+    }
+    th {
+      background: #fafafa;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .tag {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      background: #eee;
+      margin-right: 4px;
+    }
+    .tag.sysdia {
+      background: #e0f0ff;
+    }
+    .tag.hr {
+      background: #ffe0e0;
+    }
+    .small {
+      font-size: 0.8rem;
+      color: #666;
+    }
+    canvas {
+      max-height: 260px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>血壓紀錄（Google Sheet 雲端同步版）</h1>
+    <div class="subtitle">
+      電腦輸入、手機查看，用同一個網址就可以共用資料。
+    </div>
+
+    <!-- 表單 -->
+    <div class="card">
+      <h2 style="margin-top:0;">新增紀錄 Add Record</h2>
+      <div class="form-grid">
+        <div>
+          <label>日期 Date</label>
+          <input type="date" id="dateInput" />
+        </div>
+        <div>
+          <label>時間 Time</label>
+          <input type="time" id="timeInput" />
+        </div>
+        <div>
+          <label>收縮壓 Systolic (mmHg)</label>
+          <input type="number" id="sysInput" inputmode="numeric" placeholder="例如 120" />
+        </div>
+        <div>
+          <label>舒張壓 Diastolic (mmHg)</label>
+          <input type="number" id="diaInput" inputmode="numeric" placeholder="例如 80" />
+        </div>
+
+        <div>
+          <label>心跳 Heart Rate (bpm，可留白)</label>
+          <input type="number" id="hrInput" inputmode="numeric" placeholder="例如 70" />
+        </div>
+        <div>
+          <label>姿勢 Posture</label>
+          <select id="postureInput">
+            <option value="">未填寫 / Not set</option>
+            <option value="坐姿">坐姿 Sitting</option>
+            <option value="站姿">站姿 Standing</option>
+            <option value="躺姿">躺姿 Lying</option>
+          </select>
+        </div>
+        <div>
+          <label>測量手臂 Arm</label>
+          <select id="armInput">
+            <option value="">未填寫 / Not set</option>
+            <option value="左手">左手 Left</option>
+            <option value="右手">右手 Right</option>
+          </select>
+        </div>
+
+        <div class="full">
+          <label>備註 Note</label>
+          <textarea id="noteInput" placeholder="例如：起床後 10 分鐘、吃藥前、運動後…"></textarea>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="saveBtn">儲存 Save</button>
+        <button type="button" class="secondary" id="nowBtn">填入現在時間 Use now</button>
+        <button type="button" class="secondary" id="clearFormBtn">清除欄位 Clear form</button>
+      </div>
+      <div id="message" class="small"></div>
+    </div>
+
+    <!-- 統計 + 圖表 -->
+    <div class="card">
+      <h2 style="margin-top:0;">統計與趨勢 Stats & Trend</h2>
+      <div id="stats" class="stats-line">讀取中 Loading…</div>
+      <div class="small" style="margin-bottom:8px;">
+        最近 7 天平均血壓，以及最近 30 天折線圖（電腦或手機任何一處輸入都同步）。
+      </div>
+      <canvas id="bpChart"></canvas>
+    </div>
+
+    <!-- 歷史紀錄 -->
+    <div class="card">
+      <h2 style="margin-top:0;">歷史紀錄 History</h2>
+      <div class="table-container">
+        <table id="recordsTable">
+          <thead>
+            <tr>
+              <th>日期 Date</th>
+              <th>時間 Time</th>
+              <th>血壓 BP</th>
+              <th>心跳 HR</th>
+              <th>姿勢 / 手臂</th>
+              <th>備註 Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- rows by JS -->
+          </tbody>
+        </table>
+      </div>
+      <div class="small" id="recordCount"></div>
+    </div>
+  </div>
+
   <script>
-    // 把這裡換成你的 Apps Script Web App URL
-    const API_BASE = 'https://script.google.com/macros/s/AKfycbwSKY43FuZXuj_aYY0BaXda6ZFT2pPCcrObheVsCZna8K3QLV7tgQUcJBWpyz0MOFiCbg/exec';
+    // 你的 Apps Script Web App URL
+    const API_BASE = 'https://script.google.com/macros/s/AKfycbxKSA2eZ8dO9KDT36yP5wsoAEnJmRAeqRYHnObN27qokfjA32TiJ7R2kHSDMXdq8H6lUw/exec';
 
     const dateInput = document.getElementById("dateInput");
     const timeInput = document.getElementById("timeInput");
@@ -35,7 +273,6 @@
     }
 
     function clearForm() {
-      // 日期/時間保留
       sysInput.value = "";
       diaInput.value = "";
       hrInput.value = "";
@@ -55,17 +292,13 @@
       try {
         const res = await fetch(API_BASE);
         const json = await res.json();
-        records = (json.records || []).map(r => {
-          // 確保有 dt 欄位
-          return {
-            ...r,
-            dt: r.dt || (r.date && r.time
-              ? new Date(r.date + 'T' + r.time + ':00').toISOString()
-              : new Date().toISOString()
-            )
-          };
-        });
-        // 依時間排序（新的在前）
+        records = (json.records || []).map(r => ({
+          ...r,
+          dt: r.dt || (r.date && r.time
+            ? new Date(r.date + 'T' + r.time + ':00').toISOString()
+            : new Date().toISOString()
+          )
+        }));
         records.sort((a, b) => new Date(b.dt) - new Date(a.dt));
         renderAll();
       } catch (err) {
@@ -74,7 +307,6 @@
       }
     }
 
-    // ✅ 這裡是修好的 addRecord（注意後面沒有多餘的 `}`）
     async function addRecord() {
       const date = dateInput.value;
       const time = timeInput.value;
@@ -100,7 +332,6 @@
         note: noteInput.value || ''
       };
 
-      // 用 URLSearchParams 做成 form-encoded，避免觸發 CORS 預檢
       const formData = new URLSearchParams();
       Object.entries(body).forEach(([k, v]) => {
         formData.append(k, v == null ? '' : String(v));
@@ -111,7 +342,7 @@
       try {
         const res = await fetch(API_BASE, {
           method: "POST",
-          body: formData  // 不特別設 Content-Type，瀏覽器會自動用 application/x-www-form-urlencoded
+          body: formData
         });
 
         const json = await res.json();
@@ -120,7 +351,6 @@
         }
 
         clearForm();
-        // 重抓一次資料，讓其它裝置也同步
         await fetchRecords();
 
         let tip = "";
@@ -231,90 +461,4 @@
       recordCountEl.textContent = `共 ${records.length} 筆紀錄。`;
     }
 
-    function renderChart() {
-      const ctx = document.getElementById("bpChart").getContext("2d");
-      if (chart) {
-        chart.destroy();
-      }
-      if (!records.length) {
-        chart = null;
-        return;
-      }
-
-      const now = new Date();
-      const thirtyDaysAgo = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
-
-      const recent = records
-        .filter(r => new Date(r.dt) >= thirtyDaysAgo)
-        .sort((a, b) => new Date(a.dt) - new Date(b.dt));
-
-      if (!recent.length) {
-        chart = null;
-        return;
-      }
-
-      const labels = recent.map(r => {
-        const d = new Date(r.dt);
-        const mm = String(d.getMonth() + 1).padStart(2, "0");
-        const dd = String(d.getDate()).padStart(2, "0");
-        const hh = String(d.getHours()).padStart(2, "0");
-        const mi = String(d.getMinutes()).padStart(2, "0");
-        return `${mm}/${dd} ${hh}:${mi}`;
-      });
-
-      const sysData = recent.map(r => r.systolic || null);
-      const diaData = recent.map(r => r.diastolic || null);
-
-      chart = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels,
-          datasets: [
-            {
-              label: "Systolic 收縮壓",
-              data: sysData,
-              fill: false,
-              tension: 0.2
-            },
-            {
-              label: "Diastolic 舒張壓",
-              data: diaData,
-              fill: false,
-              tension: 0.2
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              title: {
-                display: true,
-                text: "mmHg"
-              }
-            }
-          },
-          plugins: {
-            legend: { display: true }
-          }
-        }
-      });
-    }
-
-    function renderAll() {
-      computeStats();
-      renderTable();
-      renderChart();
-    }
-
-    saveBtn.addEventListener("click", addRecord);
-    nowBtn.addEventListener("click", () => setNow(true));
-    clearFormBtn.addEventListener("click", clearForm);
-
-    (function init() {
-      setNow(true);
-      fetchRecords();
-    })();
-  </script>
-
+    function renderCh
