@@ -237,228 +237,321 @@
   </div>
 
   <script>
+      <script>
     // 你的 Apps Script Web App URL
-    const API_BASE = 'https://script.google.com/macros/s/AKfycbxKSA2eZ8dO9KDT36yP5wsoAEnJmRAeqRYHnObN27qokfjA32TiJ7R2kHSDMXdq8H6lUw/exec';
+    const API_BASE = 'https://script.google.com/macros/s/AKfycbwUHRMpJ__chSnbUbdEzZEnb6Ls2Vyeb2m8MXnWrylfIIUMxnqpLkgVVPz-9kbysJ2EsA/exec';
 
-    const dateInput = document.getElementById("dateInput");
-    const timeInput = document.getElementById("timeInput");
-    const sysInput  = document.getElementById("sysInput");
-    const diaInput  = document.getElementById("diaInput");
-    const hrInput   = document.getElementById("hrInput");
-    const postureInput = document.getElementById("postureInput");
-    const armInput  = document.getElementById("armInput");
-    const noteInput = document.getElementById("noteInput");
+    // 等整個 DOM 載完再開始抓元素、綁事件
+    window.addEventListener('DOMContentLoaded', () => {
+      const dateInput = document.getElementById("dateInput");
+      const timeInput = document.getElementById("timeInput");
+      const sysInput  = document.getElementById("sysInput");
+      const diaInput  = document.getElementById("diaInput");
+      const hrInput   = document.getElementById("hrInput");
+      const postureInput = document.getElementById("postureInput");
+      const armInput  = document.getElementById("armInput");
+      const noteInput = document.getElementById("noteInput");
 
-    const saveBtn = document.getElementById("saveBtn");
-    const nowBtn = document.getElementById("nowBtn");
-    const clearFormBtn = document.getElementById("clearFormBtn");
+      const saveBtn = document.getElementById("saveBtn");
+      const nowBtn = document.getElementById("nowBtn");
+      const clearFormBtn = document.getElementById("clearFormBtn");
 
-    const messageEl = document.getElementById("message");
-    const statsEl = document.getElementById("stats");
-    const recordCountEl = document.getElementById("recordCount");
-    const recordsTableBody = document.querySelector("#recordsTable tbody");
+      const messageEl = document.getElementById("message");
+      const statsEl = document.getElementById("stats");
+      const recordCountEl = document.getElementById("recordCount");
+      const recordsTableBody = document.querySelector("#recordsTable tbody");
 
-    let records = [];
-    let chart = null;
+      let records = [];
+      let chart = null;
 
-    function setNow(force = false) {
-      const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, "0");
-      const dd = String(now.getDate()).padStart(2, "0");
-      const hh = String(now.getHours()).padStart(2, "0");
-      const mi = String(now.getMinutes()).padStart(2, "0");
-      if (force || !dateInput.value) dateInput.value = `${yyyy}-${mm}-${dd}`;
-      if (force || !timeInput.value) timeInput.value = `${hh}:${mi}`;
-    }
-
-    function clearForm() {
-      sysInput.value = "";
-      diaInput.value = "";
-      hrInput.value = "";
-      postureInput.value = "";
-      armInput.value = "";
-      noteInput.value = "";
-      messageEl.textContent = "";
-    }
-
-    function showMessage(msg, isError = false) {
-      messageEl.textContent = msg;
-      messageEl.style.color = isError ? "#ff3b30" : "#333";
-    }
-
-    async function fetchRecords() {
-      statsEl.textContent = "讀取中 Loading…";
-      try {
-        const res = await fetch(API_BASE);
-        const json = await res.json();
-        records = (json.records || []).map(r => ({
-          ...r,
-          dt: r.dt || (r.date && r.time
-            ? new Date(r.date + 'T' + r.time + ':00').toISOString()
-            : new Date().toISOString()
-          )
-        }));
-        records.sort((a, b) => new Date(b.dt) - new Date(a.dt));
-        renderAll();
-      } catch (err) {
-        console.error(err);
-        statsEl.textContent = "讀取失敗，請稍後再試。";
-      }
-    }
-
-    async function addRecord() {
-      const date = dateInput.value;
-      const time = timeInput.value;
-      if (!date || !time) {
-        showMessage("請先填寫日期與時間。", true);
-        return;
-      }
-      const sysVal = Number(sysInput.value);
-      const diaVal = Number(diaInput.value);
-      if (!sysVal || !diaVal) {
-        showMessage("請輸入收縮壓與舒張壓（數字）。", true);
-        return;
+      function setNow(force = false) {
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, "0");
+        const dd = String(now.getDate()).padStart(2, "0");
+        const hh = String(now.getHours()).padStart(2, "0");
+        const mi = String(now.getMinutes()).padStart(2, "0");
+        if (force || !dateInput.value) dateInput.value = `${yyyy}-${mm}-${dd}`;
+        if (force || !timeInput.value) timeInput.value = `${hh}:${mi}`;
       }
 
-      const body = {
-        date,
-        time,
-        systolic: sysVal,
-        diastolic: diaVal,
-        heartRate: hrInput.value ? Number(hrInput.value) : '',
-        posture: postureInput.value || '',
-        arm: armInput.value || '',
-        note: noteInput.value || ''
-      };
+      function clearForm() {
+        sysInput.value = "";
+        diaInput.value = "";
+        hrInput.value = "";
+        postureInput.value = "";
+        armInput.value = "";
+        noteInput.value = "";
+        messageEl.textContent = "";
+      }
 
-      const formData = new URLSearchParams();
-      Object.entries(body).forEach(([k, v]) => {
-        formData.append(k, v == null ? '' : String(v));
-      });
+      function showMessage(msg, isError = false) {
+        messageEl.textContent = msg;
+        messageEl.style.color = isError ? "#ff3b30" : "#333";
+      }
 
-      saveBtn.disabled = true;
-      showMessage("儲存中…", false);
-      try {
-        const res = await fetch(API_BASE, {
-          method: "POST",
-          body: formData
+      async function fetchRecords() {
+        statsEl.textContent = "讀取中 Loading…";
+        try {
+          const res = await fetch(API_BASE);
+          const json = await res.json();
+          records = (json.records || []).map(r => ({
+            ...r,
+            dt: r.dt || (r.date && r.time
+              ? new Date(r.date + 'T' + r.time + ':00').toISOString()
+              : new Date().toISOString()
+            )
+          }));
+          records.sort((a, b) => new Date(b.dt) - new Date(a.dt));
+          renderAll();
+        } catch (err) {
+          console.error(err);
+          statsEl.textContent = "讀取失敗，請稍後再試。";
+        }
+      }
+
+      async function addRecord() {
+        const date = dateInput.value;
+        const time = timeInput.value;
+        if (!date || !time) {
+          showMessage("請先填寫日期與時間。", true);
+          return;
+        }
+        const sysVal = Number(sysInput.value);
+        const diaVal = Number(diaInput.value);
+        if (!sysVal || !diaVal) {
+          showMessage("請輸入收縮壓與舒張壓（數字）。", true);
+          return;
+        }
+
+        const body = {
+          date,
+          time,
+          systolic: sysVal,
+          diastolic: diaVal,
+          heartRate: hrInput.value ? Number(hrInput.value) : '',
+          posture: postureInput.value || '',
+          arm: armInput.value || '',
+          note: noteInput.value || ''
+        };
+
+        const formData = new URLSearchParams();
+        Object.entries(body).forEach(([k, v]) => {
+          formData.append(k, v == null ? '' : String(v));
         });
 
-        const json = await res.json();
-        if (!json.success) {
-          throw new Error(json.error || "unknown error");
+        saveBtn.disabled = true;
+        showMessage("儲存中…", false);
+        try {
+          const res = await fetch(API_BASE, {
+            method: "POST",
+            body: formData
+          });
+
+          const json = await res.json();
+          if (!json.success) {
+            throw new Error(json.error || "unknown error");
+          }
+
+          clearForm();
+          await fetchRecords();
+
+          let tip = "";
+          if (sysVal < 90 || diaVal < 60) {
+            tip = "偏低，若有不適建議諮詢醫師。";
+          } else if (sysVal < 120 && diaVal < 80) {
+            tip = "正常範圍。";
+          } else if (sysVal < 140 && diaVal < 90) {
+            tip = "偏高，需留意生活作息。";
+          } else {
+            tip = "可能過高，建議與醫師討論。";
+          }
+          showMessage(`已儲存：${sysVal}/${diaVal} mmHg（${tip}）`);
+        } catch (err) {
+          console.error(err);
+          showMessage("儲存失敗，請檢查設定或稍後再試。", true);
+        } finally {
+          saveBtn.disabled = false;
+        }
+      }
+
+      function computeStats() {
+        if (!records.length) {
+          statsEl.textContent = "尚無資料 No data yet.";
+          return;
+        }
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const sevenDaysAgo = new Date(todayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
+
+        const recent = records.filter(r => {
+          const d = new Date(r.dt);
+          const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+          return day >= sevenDaysAgo && day <= todayStart;
+        });
+
+        if (!recent.length) {
+          statsEl.textContent = "最近 7 天沒有紀錄 No records in last 7 days.";
+          return;
         }
 
-        clearForm();
-        await fetchRecords();
+        const avgSys = recent.reduce((sum, r) => sum + (r.systolic || 0), 0) / recent.length;
+        const avgDia = recent.reduce((sum, r) => sum + (r.diastolic || 0), 0) / recent.length;
 
-        let tip = "";
-        if (sysVal < 90 || diaVal < 60) {
-          tip = "偏低，若有不適建議諮詢醫師。";
-        } else if (sysVal < 120 && diaVal < 80) {
-          tip = "正常範圍。";
-        } else if (sysVal < 140 && diaVal < 90) {
-          tip = "偏高，需留意生活作息。";
-        } else {
-          tip = "可能過高，建議與醫師討論。";
+        statsEl.textContent =
+          `最近 7 天平均血壓：約 ${avgSys.toFixed(1)} / ${avgDia.toFixed(1)} mmHg  ` +
+          `（樣本數 ${recent.length} 筆）`;
+      }
+
+      function renderTable() {
+        recordsTableBody.innerHTML = "";
+        if (!records.length) {
+          const tr = document.createElement("tr");
+          const td = document.createElement("td");
+          td.colSpan = 6;
+          td.textContent = "目前沒有紀錄 No records yet.";
+          tr.appendChild(td);
+          recordsTableBody.appendChild(tr);
+          recordCountEl.textContent = "";
+          return;
         }
-        showMessage(`已儲存：${sysVal}/${diaVal} mmHg（${tip}）`);
-      } catch (err) {
-        console.error(err);
-        showMessage("儲存失敗，請檢查設定或稍後再試。", true);
-      } finally {
-        saveBtn.disabled = false;
+
+        records.forEach(r => {
+          const d = r.dt ? new Date(r.dt) : new Date();
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          const dd = String(d.getDate()).padStart(2, "0");
+          const hh = String(d.getHours()).padStart(2, "0");
+          const mi = String(d.getMinutes()).padStart(2, "0");
+
+          const tr = document.createElement("tr");
+
+          const dateTd = document.createElement("td");
+          dateTd.textContent = `${yyyy}/${mm}/${dd}`;
+          tr.appendChild(dateTd);
+
+          const timeTd = document.createElement("td");
+          timeTd.textContent = `${hh}:${mi}`;
+          tr.appendChild(timeTd);
+
+          const bpTd = document.createElement("td");
+          bpTd.innerHTML =
+            `<span class="tag sysdia">${r.systolic || "-"} / ${r.diastolic || "-"} mmHg</span>`;
+          tr.appendChild(bpTd);
+
+          const hrTd = document.createElement("td");
+          if (r.heartRate != null && !Number.isNaN(r.heartRate)) {
+            hrTd.innerHTML = `<span class="tag hr">${r.heartRate} bpm</span>`;
+          } else {
+            hrTd.textContent = "-";
+          }
+          tr.appendChild(hrTd);
+
+          const condTd = document.createElement("td");
+          const parts = [];
+          if (r.posture) parts.push(r.posture);
+          if (r.arm) parts.push(r.arm);
+          condTd.textContent = parts.length ? parts.join(" / ") : "-";
+          tr.appendChild(condTd);
+
+          const noteTd = document.createElement("td");
+          noteTd.textContent = r.note || "";
+          tr.appendChild(noteTd);
+
+          recordsTableBody.appendChild(tr);
+        });
+
+        recordCountEl.textContent = `共 ${records.length} 筆紀錄。`;
       }
-    }
 
-    function computeStats() {
-      if (!records.length) {
-        statsEl.textContent = "尚無資料 No data yet.";
-        return;
-      }
-      const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const sevenDaysAgo = new Date(todayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
-
-      const recent = records.filter(r => {
-        const d = new Date(r.dt);
-        const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-        return day >= sevenDaysAgo && day <= todayStart;
-      });
-
-      if (!recent.length) {
-        statsEl.textContent = "最近 7 天沒有紀錄 No records in last 7 days.";
-        return;
-      }
-
-      const avgSys = recent.reduce((sum, r) => sum + (r.systolic || 0), 0) / recent.length;
-      const avgDia = recent.reduce((sum, r) => sum + (r.diastolic || 0), 0) / recent.length;
-
-      statsEl.textContent =
-        `最近 7 天平均血壓：約 ${avgSys.toFixed(1)} / ${avgDia.toFixed(1)} mmHg  ` +
-        `（樣本數 ${recent.length} 筆）`;
-    }
-
-    function renderTable() {
-      recordsTableBody.innerHTML = "";
-      if (!records.length) {
-        const tr = document.createElement("tr");
-        const td = document.createElement("td");
-        td.colSpan = 6;
-        td.textContent = "目前沒有紀錄 No records yet.";
-        tr.appendChild(td);
-        recordsTableBody.appendChild(tr);
-        recordCountEl.textContent = "";
-        return;
-      }
-
-      records.forEach(r => {
-        const d = r.dt ? new Date(r.dt) : new Date();
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, "0");
-        const dd = String(d.getDate()).padStart(2, "0");
-        const hh = String(d.getHours()).padStart(2, "0");
-        const mi = String(d.getMinutes()).padStart(2, "0");
-
-        const tr = document.createElement("tr");
-
-        const dateTd = document.createElement("td");
-        dateTd.textContent = `${yyyy}/${mm}/${dd}`;
-        tr.appendChild(dateTd);
-
-        const timeTd = document.createElement("td");
-        timeTd.textContent = `${hh}:${mi}`;
-        tr.appendChild(timeTd);
-
-        const bpTd = document.createElement("td");
-        bpTd.innerHTML =
-          `<span class="tag sysdia">${r.systolic || "-"} / ${r.diastolic || "-"} mmHg</span>`;
-        tr.appendChild(bpTd);
-
-        const hrTd = document.createElement("td");
-        if (r.heartRate != null && !Number.isNaN(r.heartRate)) {
-          hrTd.innerHTML = `<span class="tag hr">${r.heartRate} bpm</span>`;
-        } else {
-          hrTd.textContent = "-";
+      function renderChart() {
+        const ctx = document.getElementById("bpChart").getContext("2d");
+        if (chart) {
+          chart.destroy();
         }
-        tr.appendChild(hrTd);
+        if (!records.length) {
+          chart = null;
+          return;
+        }
 
-        const condTd = document.createElement("td");
-        const parts = [];
-        if (r.posture) parts.push(r.posture);
-        if (r.arm) parts.push(r.arm);
-        condTd.textContent = parts.length ? parts.join(" / ") : "-";
-        tr.appendChild(condTd);
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
 
-        const noteTd = document.createElement("td");
-        noteTd.textContent = r.note || "";
-        tr.appendChild(noteTd);
+        const recent = records
+          .filter(r => new Date(r.dt) >= thirtyDaysAgo)
+          .sort((a, b) => new Date(a.dt) - new Date(b.dt));
 
-        recordsTableBody.appendChild(tr);
-      });
+        if (!recent.length) {
+          chart = null;
+          return;
+        }
 
-      recordCountEl.textContent = `共 ${records.length} 筆紀錄。`;
-    }
+        const labels = recent.map(r => {
+          const d = new Date(r.dt);
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          const dd = String(d.getDate()).padStart(2, "0");
+          const hh = String(d.getHours()).padStart(2, "0");
+          const mi = String(d.getMinutes()).padStart(2, "0");
+          return `${mm}/${dd} ${hh}:${mi}`;
+        });
+
+        const sysData = recent.map(r => r.systolic || null);
+        const diaData = recent.map(r => r.diastolic || null);
+
+        chart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "Systolic 收縮壓",
+                data: sysData,
+                fill: false,
+                tension: 0.2
+              },
+              {
+                label: "Diastolic 舒張壓",
+                data: diaData,
+                fill: false,
+                tension: 0.2
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                title: {
+                  display: true,
+                  text: "mmHg"
+                }
+              }
+            },
+            plugins: {
+              legend: { display: true }
+            }
+          }
+        });
+      }
+
+      function renderAll() {
+        computeStats();
+        renderTable();
+        renderChart();
+      }
+
+      // 綁事件
+      saveBtn.addEventListener("click", addRecord);
+      nowBtn.addEventListener("click", () => setNow(true));
+      clearFormBtn.addEventListener("click", clearForm);
+
+      // 初始化
+      setNow(true);
+      fetchRecords();
+    });
+  </script>
+
 
     function renderCh
+
