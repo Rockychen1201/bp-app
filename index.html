@@ -290,6 +290,7 @@
         messageEl.style.color = isError ? "#ff3b30" : "#333";
       }
 
+
       async function fetchRecords() {
         statsEl.textContent = "讀取中 Loading…";
         try {
@@ -305,10 +306,13 @@
           records.sort((a, b) => new Date(b.dt) - new Date(a.dt));
           renderAll();
         } catch (err) {
-          console.error(err);
-          statsEl.textContent = "讀取失敗，請稍後再試。";
+          console.error('fetchRecords error:', err);
+          statsEl.textContent = "讀取失敗：" + err;
         }
       }
+
+
+ 
 
       async function addRecord() {
         const date = dateInput.value;
@@ -554,4 +558,5 @@
 
 
     function renderCh
+
 
