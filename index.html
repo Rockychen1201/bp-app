@@ -238,7 +238,7 @@
 
   <script>
     // 把這裡換成你的 Apps Script Web App URL
-    const API_BASE = 'https://script.google.com/macros/s/AKfycbyNN4O3wox-Tn8-DgWI6_sGNX57M5Zt6uwxzC35xIU6PFaq6in_nOQHx5QcHfoz_El7_A/exec';
+    const API_BASE = 'https://script.google.com/macros/s/AKfycbxKSA2eZ8dO9KDT36yP5wsoAEnJmRAeqRYHnObN27qokfjA32TiJ7R2kHSDMXdq8H6lUw/exec';
 
     const dateInput = document.getElementById("dateInput");
     const timeInput = document.getElementById("timeInput");
@@ -313,66 +313,72 @@
     }
 
     async function addRecord() {
-      const date = dateInput.value;
-      const time = timeInput.value;
-      if (!date || !time) {
-        showMessage("請先填寫日期與時間。", true);
-        return;
-      }
-      const sysVal = Number(sysInput.value);
-      const diaVal = Number(diaInput.value);
-      if (!sysVal || !diaVal) {
-        showMessage("請輸入收縮壓與舒張壓（數字）。", true);
-        return;
-      }
+  const date = dateInput.value;
+  const time = timeInput.value;
+  if (!date || !time) {
+    showMessage("請先填寫日期與時間。", true);
+    return;
+  }
+  const sysVal = Number(sysInput.value);
+  const diaVal = Number(diaInput.value);
+  if (!sysVal || !diaVal) {
+    showMessage("請輸入收縮壓與舒張壓（數字）。", true);
+    return;
+  }
 
-      const body = {
-        date,
-        time,
-        systolic: sysVal,
-        diastolic: diaVal,
-        heartRate: hrInput.value ? Number(hrInput.value) : null,
-        posture: postureInput.value || "",
-        arm: armInput.value || "",
-        note: noteInput.value || ""
-      };
+  const body = {
+    date,
+    time,
+    systolic: sysVal,
+    diastolic: diaVal,
+    heartRate: hrInput.value ? Number(hrInput.value) : '',
+    posture: postureInput.value || '',
+    arm: armInput.value || '',
+    note: noteInput.value || ''
+  };
 
-      saveBtn.disabled = true;
-      showMessage("儲存中…", false);
-      try {
-        const res = await fetch(API_BASE, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(body)
-        });
-        const json = await res.json();
-        if (!json.success) {
-          throw new Error(json.error || "unknown error");
-        }
+  // 用 URLSearchParams 做成 form-encoded，避免觸發 CORS 預檢
+  const formData = new URLSearchParams();
+  Object.entries(body).forEach(([k, v]) => {
+    formData.append(k, v == null ? '' : String(v));
+  });
 
-        clearForm();
-        // 重抓一次資料（讓手機/電腦一致）
-        await fetchRecords();
+  saveBtn.disabled = true;
+  showMessage("儲存中…", false);
+  try {
+    const res = await fetch(API_BASE, {
+      method: "POST",
+      body: formData  // 不特別設 Content-Type，瀏覽器會自動用 application/x-www-form-urlencoded
+    });
 
-        let tip = "";
-        if (sysVal < 90 || diaVal < 60) {
-          tip = "偏低，若有不適建議諮詢醫師。";
-        } else if (sysVal < 120 && diaVal < 80) {
-          tip = "正常範圍。";
-        } else if (sysVal < 140 && diaVal < 90) {
-          tip = "偏高，需留意生活作息。";
-        } else {
-          tip = "可能過高，建議與醫師討論。";
-        }
-        showMessage(`已儲存：${sysVal}/${diaVal} mmHg（${tip}）`);
-      } catch (err) {
-        console.error(err);
-        showMessage("儲存失敗，請檢查網路或稍後再試。", true);
-      } finally {
-        saveBtn.disabled = false;
-      }
+    const json = await res.json();
+    if (!json.success) {
+      throw new Error(json.error || "unknown error");
+    }
+
+    clearForm();
+    // 重抓一次資料，讓其它裝置也同步
+    await fetchRecords();
+
+    let tip = "";
+    if (sysVal < 90 || diaVal < 60) {
+      tip = "偏低，若有不適建議諮詢醫師。";
+    } else if (sysVal < 120 && diaVal < 80) {
+      tip = "正常範圍。";
+    } else if (sysVal < 140 && diaVal < 90) {
+      tip = "偏高，需留意生活作息。";
+    } else {
+      tip = "可能過高，建議與醫師討論。";
+    }
+    showMessage(`已儲存：${sysVal}/${diaVal} mmHg（${tip}）`);
+  } catch (err) {
+    console.error(err);
+    showMessage("儲存失敗，請檢查設定或稍後再試。", true);
+  } finally {
+    saveBtn.disabled = false;
+  }
+}
+
     }
 
     function computeStats() {
@@ -552,3 +558,4 @@
   </script>
 </body>
 </html>
+
